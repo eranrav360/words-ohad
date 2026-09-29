@@ -72,6 +72,23 @@ button:focus-visible,select:focus-visible,input:focus-visible,.card:focus-visibl
 .extra{font-size:.88rem;color:var(--muted);display:flex;flex-direction:column;gap:2px;align-items:center}
 .extra .en{font-family:var(--en);color:var(--ink);font-size:1.05rem}
 .tap{font-size:.75rem;color:var(--muted);text-align:center}
+.sheet{position:relative;inset:auto;min-height:320px}
+.spellbody{gap:14px;padding-top:30px}
+.listen{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.btn.big{font-size:1.05rem;padding:12px 20px}
+.sp-hint{color:var(--muted);font-size:.95rem}
+.sp-hint b{color:var(--ink);font-weight:500}
+.sp-form{display:flex;gap:8px;width:100%;max-width:420px}
+.sp-form input{flex:1;min-width:0;font:600 1.4rem var(--en);color:var(--ink);background:var(--surface);border:2px solid var(--line);border-radius:10px;padding:10px 12px;text-align:center;letter-spacing:.04em}
+.sp-form input:focus{border-color:var(--accent);outline:none}
+.sp-form input.ok{border-color:var(--good)} .sp-form input.bad{border-color:var(--warn)}
+.sp-fb{min-height:3.2em;display:flex;flex-direction:column;gap:4px;align-items:center;font-size:.95rem}
+.sp-fb .res{font-weight:600} .sp-fb .res.ok{color:var(--good)} .sp-fb .res.bad{color:var(--warn)}
+.sp-fb .cmp{font-family:var(--en);font-size:1.35rem;letter-spacing:.05em}
+.sp-fb .lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-inline-end:6px;font-family:var(--ui)}
+.sp-fb .x{color:var(--warn);text-decoration:line-through}
+.sp-fb .m{color:var(--good);background:var(--good-bg);border-radius:3px;text-decoration:underline;text-underline-offset:3px}
+.sp-note{font-size:.8rem;color:var(--muted)}
 .actions{display:grid;grid-template-columns:1fr auto 1fr;gap:10px}
 .actions .btn{padding:12px 10px;font-size:1rem}
 .miss{background:var(--warn-bg);color:var(--warn);border-color:transparent}
@@ -109,7 +126,7 @@ textarea{width:100%;min-height:90px;font:12px ui-monospace,monospace;background:
   <header>
     <div>
       <h1>Test 3 Flashcards</h1>
-      <p class="sub">Test 3 word list · 20 words + 2 bonus · English ⇄ עברית</p>
+      <p class="sub">Test 3 word list · 20 words + 2 bonus · listen, spell, check</p>
     </div>
     <div class="tabs" role="tablist">
       <button id="tab-practice" role="tab" aria-selected="true">Practice</button>
@@ -126,6 +143,8 @@ textarea{width:100%;min-height:90px;font:12px ui-monospace,monospace;background:
 
   <section id="view-practice" style="display:flex;flex-direction:column;gap:14px">
     <div class="controls">
+      <div class="field"><label for="f-mode">Mode</label>
+        <select id="f-mode"><option value="spell">Spelling: listen &amp; type</option><option value="cards">Flashcards</option></select></div>
       <div class="field"><label for="f-core">List</label>
         <select id="f-core"><option value="0">All 22 words</option><option value="1">Test words</option><option value="2">Bonus words</option></select></div>
       <div class="field" hidden><label for="f-rp">Knowledge</label>
@@ -136,7 +155,7 @@ textarea{width:100%;min-height:90px;font:12px ui-monospace,monospace;background:
         <select id="f-letter"><option value="">All</option></select></div>
       <div class="field"><label for="f-order">Order</label>
         <select id="f-order"><option value="shuffle">Shuffled</option><option value="doc">Document order</option></select></div>
-      <div class="field"><label for="f-dir">Show first</label>
+      <div class="field" id="fld-dir"><label for="f-dir">Show first</label>
         <select id="f-dir"><option value="en">English</option><option value="he">Hebrew</option><option value="mix">Mixed</option></select></div>
       <button class="btn primary" id="b-new" style="margin-inline-start:auto">New round</button>
     </div>
@@ -158,6 +177,24 @@ textarea{width:100%;min-height:90px;font:12px ui-monospace,monospace;background:
         </div>
       </div>
     </div>
+    <div id="spellzone" hidden>
+      <div class="face sheet">
+        <div class="facehead"><span>Spelling</span><span class="tags" id="sp-tags"></span></div>
+        <div class="facebody spellbody">
+          <div class="listen">
+            <button class="btn primary big" id="sp-say" type="button">🔊 Hear the word</button>
+            <button class="btn" id="sp-slow" type="button">Slowly</button>
+          </div>
+          <div class="sp-hint" id="sp-hint"></div>
+          <form class="sp-form" id="sp-form" autocomplete="off">
+            <input id="sp-in" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Type the word you heard" placeholder="Type the word">
+            <button class="btn primary" id="sp-check" type="submit">Check</button>
+          </form>
+          <div class="sp-fb" id="sp-fb" aria-live="polite"></div>
+          <div class="sp-note" id="sp-note" hidden>This browser can't read words aloud. Use the Hebrew meaning as your prompt.</div>
+        </div>
+      </div>
+    </div>
     <div class="empty" id="emptymsg" hidden></div>
 
     <div class="actions" id="actions">
@@ -166,7 +203,7 @@ textarea{width:100%;min-height:90px;font:12px ui-monospace,monospace;background:
       <button class="btn hit" id="b-hit">Got it</button>
     </div>
     <div class="nav"><button class="btn" id="b-back">‹ Back</button><span id="d-pos2"></span><button class="btn" id="b-next">Next ›</button></div>
-    <div class="kbd">Keys: Space flip · ← or 1 need practice · → or 2 got it · B back · N next · F toggle flag</div>
+    <div class="kbd">Spelling: Enter checks, Enter again goes to the next word · Flashcards: Space flip · ← need practice · → got it</div>
   </section>
 
   <section id="view-list" hidden>
@@ -197,7 +234,7 @@ const WORDS=[["also","adv","","גם",1,"",""],["harvest","n, v","","קציר, י
 const KNOWN_STREAK = 2; // consecutive "got it" answers that clear a flag / count as known
 const LS_KEY = 'test3-flashcards-v1';
 let progress = {}; // id -> {r,w,s,f,t}
-let settings = {core:'0', rp:'', deck:'all', dir:'en', letter:'', order:'shuffle'};
+let settings = {core:'0', rp:'', deck:'all', dir:'en', letter:'', order:'doc', mode:'spell'};
 function firstLetter(i){const m=WORDS[i][0].match(/[a-z]/i);return m?m[0].toUpperCase():'';}
 let queue = [], qi = 0, flipped = false, curSide = 'en', roundTotal = 0;
 
@@ -233,7 +270,7 @@ function applyImport(obj,silent){
   syncControls(); return n;
 }
 
-function syncControls(){$('f-letter').value=settings.letter||'';$('f-order').value=settings.order||'shuffle';$('f-core').value=settings.core;$('f-rp').value=settings.rp;$('f-deck').value=settings.deck;$('f-dir').value=settings.dir;}
+function syncControls(){$('f-mode').value=settings.mode||'spell';$('f-letter').value=settings.letter||'';$('f-order').value=settings.order||'shuffle';$('f-core').value=settings.core;$('f-rp').value=settings.rp;$('f-deck').value=settings.deck;$('f-dir').value=settings.dir;}
 
 function inList(i){const w=WORDS[i];return (settings.core==='0'||String(w[4])===settings.core)&&(!settings.rp||w[5]===settings.rp)&&(!settings.letter||firstLetter(i)===settings.letter);}
 function buildQueue(){
@@ -265,13 +302,15 @@ function render(){
   $('d-left').textContent=done?'':`${queue.length-qi} left`;
   $('d-pos2').textContent=$('d-pos').textContent;$('b-back').disabled=qi<=0;$('b-next').disabled=qi>=queue.length;
   if(!queue.length||done){
-    $('cardzone').hidden=true;$('actions').style.visibility='hidden';$('emptymsg').hidden=false;
+    $('cardzone').hidden=true;$('spellzone').hidden=true;$('actions').style.visibility='hidden';$('emptymsg').hidden=false;$('fld-dir').hidden=settings.mode==='spell';
     $('emptymsg').innerHTML=!roundTotal?(settings.deck==='flag'?'No words are flagged for practice in this list yet.':'No cards match these filters.')
       :`Round finished. <br><br><button class="btn primary" onclick="buildQueue()">Start another round</button>`;
     return;
   }
-  $('cardzone').hidden=false;$('actions').style.visibility='visible';$('emptymsg').hidden=true;
+  const spell=settings.mode==='spell';$('fld-dir').hidden=spell;
+  $('cardzone').hidden=spell;$('spellzone').hidden=!spell;$('actions').hidden=spell;$('actions').style.visibility='visible';$('emptymsg').hidden=true;
   const i=queue[qi],w=WORDS[i];
+  if(spell){setupSpell(i);$('b-flag').classList.toggle('miss',!!(progress[i]&&progress[i].f));return;}
   curSide=settings.dir==='mix'?(Math.random()<.5?'en':'he'):settings.dir;
   // wait for the flip-back before swapping faces so the answer never shows
   setTimeout(()=>{
@@ -336,11 +375,15 @@ $('b-hit').onclick=()=>answer(true);$('b-miss').onclick=()=>answer(false);$('b-f
 $('b-new').onclick=()=>{buildQueue();persist();};
 function go(d){if(!queue.length)return;qi=Math.max(0,Math.min(queue.length,qi+d));persist();render();}
 $('b-back').onclick=()=>go(-1);$('b-next').onclick=()=>go(1);
-['f-core','f-rp','f-deck','f-dir','f-letter','f-order'].forEach(id=>$(id).addEventListener('change',()=>{
-  settings.core=$('f-core').value;settings.rp=$('f-rp').value;settings.deck=$('f-deck').value;settings.dir=$('f-dir').value;settings.letter=$('f-letter').value;settings.order=$('f-order').value;persist();
-  if(id==='f-dir'){render();}else{buildQueue();persist();}}));
+['f-mode','f-core','f-rp','f-deck','f-dir','f-letter','f-order'].forEach(id=>$(id).addEventListener('change',()=>{
+  settings.core=$('f-core').value;settings.rp=$('f-rp').value;settings.deck=$('f-deck').value;settings.dir=$('f-dir').value;settings.letter=$('f-letter').value;settings.order=$('f-order').value;settings.mode=$('f-mode').value;persist();
+  if(id==='f-dir'||id==='f-mode'){render();}else{buildQueue();persist();}}));
 document.addEventListener('keydown',e=>{
   if($('view-practice').hidden||e.target.matches('input,select,textarea'))return;
+  if(settings.mode==='spell'){
+    if(e.key==='b'||e.key==='B')go(-1);else if(e.key==='n'||e.key==='N')go(1);
+    else if(e.key===' '&&e.target.tagName!=='BUTTON'){e.preventDefault();speak(false);}
+    return;}
   if(e.key===' '||e.key==='Enter'){if(e.target.tagName==='BUTTON'&&e.target.id!=='card')return;e.preventDefault();flip();}
   else if(e.key==='ArrowLeft'||e.key==='1')answer(false);
   else if(e.key==='ArrowRight'||e.key==='2')answer(true);
@@ -390,6 +433,64 @@ $('b-reset-yes').onclick=()=>{progress={};persist();$('resetconfirm').hidden=tru
 
 {const counts={};for(let i=0;i<WORDS.length;i++){const l=firstLetter(i);if(l)counts[l]=(counts[l]||0)+1;}
  const sel=$('f-letter');Object.keys(counts).sort().forEach(l=>{const o=document.createElement('option');o.value=l;o.textContent=`${l} (${counts[l]})`;sel.appendChild(o);});}
+/* ---- spelling ---- */
+let userActed=false,voice=null,sp={i:-1,tries:0,done:false};
+['pointerdown','keydown'].forEach(t=>document.addEventListener(t,()=>{userActed=true;},{capture:true}));
+const canSpeak='speechSynthesis' in window&&'SpeechSynthesisUtterance' in window;
+function pickVoice(){try{const vs=speechSynthesis.getVoices();voice=vs.find(v=>/^en[-_]US/i.test(v.lang)&&/google|samantha|natural|aria|jenny/i.test(v.name))||vs.find(v=>/^en[-_]US/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang))||null;}catch(e){}}
+if(canSpeak){pickVoice();try{speechSynthesis.onvoiceschanged=pickVoice;}catch(e){}}
+function speak(slow){
+  if(sp.i<0)return;
+  if(!canSpeak){$('sp-note').hidden=false;return;}
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(WORDS[sp.i][0]);u.lang='en-US';if(voice)u.voice=voice;u.rate=slow?0.5:0.85;speechSynthesis.speak(u);}
+  catch(e){$('sp-note').hidden=false;}
+}
+function setupSpell(i){
+  sp={i,tries:0,done:false};const w=WORDS[i];
+  $('sp-tags').innerHTML=tagsHtml(i);
+  $('sp-hint').innerHTML=`<b dir="rtl" lang="he">${esc(w[3])}</b>${w[1]?` · <i>${esc(w[1])}</i>`:''}`;
+  const inp=$('sp-in');inp.value='';inp.className='';inp.disabled=false;
+  $('sp-fb').innerHTML='';$('sp-check').textContent='Check';$('sp-note').hidden=canSpeak;
+  if(userActed){try{inp.focus({preventScroll:true});}catch(e){}setTimeout(()=>speak(false),200);}
+}
+const norm=t=>t.normalize('NFC').replace(/[’‘]/g,"'").replace(/\s+/g,' ').trim().toLowerCase();
+// align what was typed with the right spelling to mark wrong, extra and missing letters
+function diff(a,b){
+  const n=a.length,m=b.length,d=[];for(let x=0;x<=n;x++){d[x]=[x];}for(let y=1;y<=m;y++)d[0][y]=y;
+  for(let x=1;x<=n;x++)for(let y=1;y<=m;y++)d[x][y]=Math.min(d[x-1][y]+1,d[x][y-1]+1,d[x-1][y-1]+(a[x-1].toLowerCase()===b[y-1].toLowerCase()?0:1));
+  const A=[],B=[];let x=n,y=m;
+  while(x>0||y>0){
+    if(x>0&&y>0&&d[x][y]===d[x-1][y-1]+(a[x-1].toLowerCase()===b[y-1].toLowerCase()?0:1)){const ok=a[x-1].toLowerCase()===b[y-1].toLowerCase();A.unshift([a[x-1],ok]);B.unshift([b[y-1],ok]);x--;y--;}
+    else if(x>0&&d[x][y]===d[x-1][y]+1){A.unshift([a[x-1],false]);x--;}
+    else{B.unshift([b[y-1],false]);y--;}
+  }
+  return {A,B};
+}
+function checkSpelling(){
+  if(sp.i<0)return;
+  if(sp.done){go(1);return;}
+  const inp=$('sp-in'),typed=norm(inp.value),target=WORDS[sp.i][0];
+  if(!typed){inp.focus();return;}
+  const ok=typed===norm(target);sp.tries++;
+  if(sp.tries===1){const p=P(sp.i);p.t=Date.now();
+    if(ok){p.r++;p.s++;if(p.f&&p.s>=KNOWN_STREAK)p.f=0;}else{p.w++;p.s=0;p.f=1;}
+    persist();updateStats();$('sp-tags').innerHTML=tagsHtml(sp.i);$('b-flag').classList.toggle('miss',!!p.f);}
+  if(ok){
+    sp.done=true;inp.className='ok';$('sp-check').textContent='Next ›';
+    $('sp-fb').innerHTML=`<span class="res ok">${sp.tries===1?'Correct!':'Correct on try '+sp.tries+'.'}</span><span class="cmp">${esc(target)}</span>`;
+  }else{
+    inp.className='bad';const {A,B}=diff(inp.value.trim(),target);
+    const you=A.map(([c,k])=>k?esc(c):`<span class="x">${esc(c)}</span>`).join('');
+    const right=B.map(([c,k])=>k?esc(c):`<span class="m">${esc(c)}</span>`).join('');
+    $('sp-fb').innerHTML=`<span class="res bad">Not quite. Try again, or press Next.</span><span class="cmp"><span class="lbl">You wrote</span>${you}</span>`+
+      (sp.tries>=2?`<span class="cmp"><span class="lbl">Correct</span>${right}</span>`:`<button class="btn" type="button" id="sp-show">Show the right spelling</button>`);
+    const sb=$('sp-show');if(sb)sb.onclick=()=>{$('sp-fb').insertAdjacentHTML('beforeend',`<span class="cmp"><span class="lbl">Correct</span>${right}</span>`);sb.remove();};
+    inp.select();
+  }
+}
+$('sp-form').addEventListener('submit',e=>{e.preventDefault();checkSpelling();});
+$('sp-say').onclick=()=>{speak(false);$('sp-in').focus();};
+$('sp-slow').onclick=()=>{speak(true);$('sp-in').focus();};
 if(!restore()){syncControls();buildQueue();}
 </script>
 
